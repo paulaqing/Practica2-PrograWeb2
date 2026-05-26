@@ -36,7 +36,16 @@ export async function fetchApi(endpoint, options = {}) {
             if (response.status === 401) {
                 authState.logout();
             }
-            throw new Error(data?.message || 'Error en la petición API');
+            // FastAPI usa "detail" (string o array), Express usa "message"
+            let errorMsg = data?.message;
+            if (!errorMsg) {
+                if (typeof data?.detail === 'string') {
+                    errorMsg = data.detail;
+                } else if (Array.isArray(data?.detail)) {
+                    errorMsg = data.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+                }
+            }
+            throw new Error(errorMsg || 'Error en la petición API');
         }
 
         return data;
